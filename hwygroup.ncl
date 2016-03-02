@@ -1,0 +1,7 @@
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/shea_util.ncl"
+load "/Users/hwy_pro/Decadal_EAWM/data/hwygroup_ncl_packages/file_control.ncl"   
+load "/Users/hwy_pro/Decadal_EAWM/data/hwygroup_ncl_packages/math_control.ncl"   
+load "/Users/hwy_pro/Decadal_EAWM/data/hwygroup_ncl_packages/string_control.ncl"
