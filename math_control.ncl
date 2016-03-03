@@ -108,8 +108,62 @@ begin
     data_out&time   =   time
     return(data_out)
 end
+undef("calc_year_from_mon")
+function calc_year_from_mon(data_in:numeric,start_month:numeric,num_months:numeric)
+begin
+    if (start_month .lt. 1 .or. start_month .gt. 12) then
+        print("Error: check the start_month: "+start_month)
+        exit
+    end if
+    if (num_months .lt. 0 .or. num_months .gt. 12) then
+        print("Error: check the num_months: "+num_months)
+        exit
+    end if
+    mon_time    =   data_in&time
+    num_mon_time    =   dimsizes(mon_time)
+    start_year      =   tointeger(mon_time(0)/100)
+    end_year        =   tointeger(mon_time(num_mon_time-1)/100)
+    first_end_month =   start_month+num_months-1
+    if (first_end_month .gt. 12) then
+        end_year    =   end_year-1
+    end if
+    time        =   ispan(start_year,end_year,1)
+    num_year    =   end_year-start_year+1
+    data_year   =   new(num_year,"float",1.0e+20)
+    data_year!0 =   "time"
+    data_year&time  =   time
+
+    do k = 0, num_year-1
+        ind1    =   start_month-1+12*k
+        ind2    =   ind1+num_months-1
+        data_year(k)    =   dim_avg(data_in(ind1:ind2))
+    end do
+    return(data_year)
+end
 
 
+undef("cut_year")
+function cut_year(ts_in:numeric,start_year:numeric,end_year:numeric)
+begin
+    time_in =   ts_in&time
+    time    =   ispan(start_year,end_year,1)
+    num_time    =   dimsizes(time) 
+    ts      =   new(num_time,typeof(ts_in),ts_in@_FillValue)
+    ts!0    =   "time"
+    ts&time =   time
+    time_in_start   =   min(time_in)
+    time_in_end     =   max(time_in)
+    if (time_in_start .gt. end_year .or. time_in_end .lt. start_year) then
+        print("error: time_in_start .gt. end_year .or. time_in_end .lt. start_year")
+        exit
+    end if
+    sub_time_start  =   max((/time_in_start,start_year/))
+    sub_time_end    =   min((/time_in_end,end_year/))
+    sub_time        =   ispan(sub_time_start,sub_time_end,1)
+    ts({sub_time})  =   ts_in({sub_time})
+    return(ts)
+
+end
 
 
 
