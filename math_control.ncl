@@ -46,5 +46,51 @@ begin
     ccr(mxlag:)    = x_Lead_y(0:mxlag)     ; "positive lag"
     ccr!0   =   "time"
     ccr&time    =   ispan(-mxlag,mxlag,1)
+    time        =   ispan(-mxlag,mxlag,1)
+    max_ccr     =   max(ccr)
+    min_ccr     =   min(ccr)
+    indMax      =   ind_resolve(ind(ccr.eq.max_ccr),dimsizes(ccr))
+    indMin      =   ind_resolve(ind(ccr.eq.min_ccr),dimsizes(ccr))
+    print("max of ccr: "+max_ccr+" obtained when "+time(indMax(0,0))+ " ts1 lags")
+    print("min of ccr: "+min_ccr+" obtained when "+time(indMin(0,0))+ " ts1 leads")
+    
     return(ccr)
 end
+
+undef("move_ts")
+function move_ts(ts:numeric,step:numeric)
+begin
+    time    =   ts&time
+    time    =   time+step
+    ts_out  =   ts
+    ts_out&time =   time
+    return(ts_out)
+end 
+
+undef("like_time")
+function like_time(ts1:numeric,ts2:numeric,if_ts1:logical)
+begin
+    time1   =   ts1&time 
+    time2   =   ts2&time
+    time_s  =   min((/min(time1),min(time2)/))
+    time_e  =   max((/max(time1),max(time2)/))
+    time    =   ispan(time_s,time_e,1)
+    num_time    =   dimsizes(time) 
+    if (if_ts1) then
+        ts  =   new(num_time,typeof(ts1),ts1@_FillValue)
+        ts!0    =   "time"
+        ts&time =   time
+        ts({time1}) =   ts1
+        return(ts)
+    end if
+        ts  =   new(num_time,typeof(ts2),ts2@_FillValue)
+        ts!0    =   "time"
+        ts&time =   time
+        ts({time2}) =   ts2
+        return(ts)
+end
+
+
+
+
+
