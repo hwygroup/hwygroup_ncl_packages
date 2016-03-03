@@ -90,6 +90,26 @@ begin
         return(ts)
 end
 
+undef("with_month_coord_1d")
+function with_month_coord_1d(data:numeric,start_year:numeric,end_year:numeric)
+begin
+    data_out    =   data
+    time        =   yyyymm_time(start_year,end_year,"integer")
+    data_out!0      =   "time"
+    data_out&time   =   time
+    return(data_out)
+end
+undef("with_year_coord_1d")
+function with_year_coord_1d(data:numeric,start_year:numeric,end_year:numeric)
+begin
+    data_out    =   data
+    time        =   ispan(start_year,end_year,1) 
+    data_out!0      =   "time"
+    data_out&time   =   time
+    return(data_out)
+end
+
+
 
 
 
