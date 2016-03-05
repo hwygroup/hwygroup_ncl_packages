@@ -1,6 +1,10 @@
 undef("cal_pvalue_cor_ts1_ts2")
 function cal_pvalue_cor_ts1_ts2(ts1:numeric,ts2:numeric)
 begin
+    if(any(ismissing(ts1)) .or. any(ismissing(ts2))) then
+        print("ts1 or ts2 contains one or more missing values, cannot continue.")
+        exit 
+    end if
     N   =   dimsizes(ts1)
     r   =   escorc(ts1,ts2)
     df  =   N-2
@@ -12,12 +16,17 @@ end
 undef("cal_pvalue_reg_ts1_ts2")
 function cal_pvalue_reg_ts1_ts2(ts1:numeric,ts2:numeric)
 begin
+    if(any(ismissing(ts1)) .or. any(ismissing(ts2))) then
+        print("ts1 or ts2 contains one or more missing values, cannot continue.")
+        exit 
+    end if
     N   =   dimsizes(ts1)
     rc  =   regline(ts1,ts2)
     df  =   rc@nptxy-2
     prob    =   betainc(df/(df+rc@tval^2), df/2.0, 0.5)
     return(prob)
 end
+
 undef("lan_filter")
 function lan_filter(ts1:numeric,if_low:logical,frq:numeric,nwt:numeric)
 begin
@@ -33,6 +42,7 @@ begin
 
     return(ts2)
 end
+
 undef("lag_lead")
 function lag_lead(ts1:numeric,ts2:numeric,mxlag:numeric)
 begin
@@ -165,6 +175,81 @@ begin
 
 end
 
+undef("calc_year_from_mon_TLL")
+function calc_year_from_mon_TLL(data_in:numeric,start_month:numeric,num_months:numeric)
+begin
+    if (start_month .lt. 1 .or. start_month .gt. 12) then
+        print("Error: check the start_month: "+start_month)
+        exit
+    end if
+    if (num_months .lt. 0 .or. num_months .gt. 12) then
+        print("Error: check the num_months: "+num_months)
+        exit
+    end if
+    mon_time    =   data_in&time
+    lat         =   data_in&lat
+    lon         =   data_in&lon
+    num_mon_time    =   dimsizes(mon_time)
+    num_lat         =   dimsizes(lat)
+    num_lon         =   dimsizes(lon)
+    start_year      =   tointeger(mon_time(0)/100)
+    end_year        =   tointeger(mon_time(num_mon_time-1)/100)
+    first_end_month =   start_month+num_months-1
+    if (first_end_month .gt. 12) then
+        end_year    =   end_year-1
+    end if
+    time        =   ispan(start_year,end_year,1)
+    num_year    =   end_year-start_year+1
+    data_year   =   new((/num_year,num_lat,num_lon/),typeof(data_in),data_in@_FillValue)
+    data_year!0 =   "time"
+    data_year&time  =   time
+    data_year!1 =   "lat"
+    data_year&lat   =   lat
+    data_year!2 =   "lon"
+    data_year&lon   =   lon
+
+    do k = 0, num_year-1
+        ind1    =   start_month-1+12*k
+        ind2    =   ind1+num_months-1
+        data_year(k,:,:)    =   dim_avg_n_Wrap(data_in(ind1:ind2,:,:),0)
+    end do
+    return(data_year)
+end
+
+undef("regcoef_lead_TLL")
+function regcoef_lead_TLL(ts_in:numeric,var_in:numeric,lead_years:numeric,if_dtrend:logical,if_cover:logical,sig:numeric)
+begin
+    if(if_dtrend) then
+        ts    =   dtrend_n(ts_in,False,0)
+        var   =   dtrend_n(var_in,False,0)
+        copy_VarMeta(ts_in,ts)
+        copy_VarMeta(var_in,var)
+    else
+        ts  =   ts_in
+        var =   var_in
+    end if
+    time    =   ts&time 
+    num_time    =   dimsizes(time)
+    if (lead_years .ge. 0) then
+        ts_move     =   ts(0:num_time-1-lead_years)
+        var_move    =   var(lead_years:num_time-1,:,:)
+    else
+        ts_move     =   ts(-lead_years:num_time-1)
+        var_move    =   var(0:num_time-1+lead_years,:,:)  
+    end if
+    var_move_LLT    =   var_move(lat|:,lon|:,time|:)
+    rc  =   regCoef(ts_move, var_move_LLT(lat|:,lon|:,time|:))
+    copy_VarMeta(var_move_LLT(:,:,0),rc)
+    tval = onedtond(rc@tval , dimsizes(rc))
+    df   = onedtond(rc@nptxy, dimsizes(rc)) - 2
+    b = tval    ; b must be same size as tval (and df)
+    b = 0.5
+    prob = betainc(df/(df+tval^2),df/2.0,b)       ; prob(nlat,nlon)
+    if( if_cover ) then
+        rc    =   where(prob .le. sig, rc, rc@_FillValue)
+    end if
+    return(rc)
+end
 
 
 
