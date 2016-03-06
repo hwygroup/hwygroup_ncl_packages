@@ -252,4 +252,52 @@ begin
 end
 
 
+undef("escorc_lead")
+function escorc_lead(ts1_in:numeric,ts2_in:numeric,lead_years:numeric,if_dtrend:logical)
+begin
+    if(if_dtrend) then
+        ts1    =   dtrend(ts1_in,False)
+        ts2    =   dtrend(ts2_in,False)
+        copy_VarMeta(ts1_in,ts1)
+        copy_VarMeta(ts2_in,ts2)
+    else
+        ts1  =   ts1_in
+        ts2  =   ts2_in
+    end if
+    time    =   ts1&time 
+    num_time    =   dimsizes(time)
+    if (lead_years .ge. 0) then
+        ts1_move    =   ts1(0:num_time-1-lead_years)
+        ts2_move    =   ts2(lead_years:num_time-1)
+    else
+        ts1_move    =   ts1(-lead_years:num_time-1)
+        ts2_move    =   ts2(0:num_time-1+lead_years)  
+    end if
+    cor =   escorc(ts1_move,ts2_move)
+    pval    =   cal_pvalue_cor_ts1_ts2(ts1_move,ts2_move)
+    cor@pval    =   pval 
+    return(cor)
+end
+
+undef("escorc_window")
+function escorc_window(ts1:numeric,ts2:numeric,mxlag:numeric,if_dtrend:logical,if_pval:logical)
+begin
+    time    =   ispan(-mxlag,mxlag,1)
+    num_time    =   dimsizes(time)
+    pval        =   new(num_time,"float")
+    pval!0      =   "time"
+    pval&time   =   time
+    cor         =   pval
+
+    do k = 0, num_time-1
+        temp    =   escorc_lead(ts1,ts2,time(k),True)
+        cor(k)  =   temp 
+        pval(k) =   temp@pval
+    end do
+    if(if_pval) then
+        return(pval)
+    else
+        return(cor)
+    end if
+end
 
